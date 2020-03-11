@@ -50,8 +50,9 @@ class MockFileContent : public SURELOG::FileContent {
     void set_objects(std::vector<SURELOG::VObject> objs){m_objects = objs;}
 };
 
+using SURELOG::VObject;
 struct CompileHelperTestStruct {
-  std::vector<SURELOG::VObject> fc;
+  std::vector<VObject> fc;
   UHDM::tf_call* expected;
   CompileHelperTestStruct(std::vector<SURELOG::VObject> file_content,
                           UHDM::tf_call* output) : fc(file_content),
@@ -61,18 +62,20 @@ struct CompileHelperTestStruct {
 
 CompileHelperTestStruct testCases[] = {
   {
-    // Vector of VObjects
-    //{
-    /*
-     "", u<93> t<Seq_block> p<94> c<54> l<4>
-     n<> u<94> t<Statement_item> p<95> c<93> l<4>
-     n<> u<95> t<Statement> p<96> c<94> l<4>
-     n<> u<96> t<Statement_or_null> p<97> c<95> l<4>
-     n<> u<97> t<Initial_construct> p<98> c<96> l<4>
-    */
-
-    //},
-	  {},0 //expected UHDM
+    // Simplest case: foo();
+    {
+      // Vector of VObjects
+      // n<>    u<19> t<Subroutine_call>   p<20> c<17>       l<3>
+      // n<foo> u<17> t<StringConst>       p<19>       s<18> l<3>
+      // n<>    u<18> t<List_of_arguments> p<19>             l<3>
+      //
+      // Constructor call:
+      // (nameId, fileId, type, line, parent, definition, child, sibling)
+     { 0, 0, VObjectType::slSubroutine_call,   3, 20, 1,  17, 0},
+     { 1/*"foo"*/, 0, VObjectType::slStringConst,       3, 19, 17, 0,  18},
+     { 0, 0, VObjectType::slList_of_arguments, 3, 19, 18, 0,  0}
+    },
+    0 //expected UHDM
   }
 };
 
@@ -89,7 +92,7 @@ TEST(TestCompileTfCall, FirstTest) {
   for (auto test_case : testCases) {
     fc.set_objects(test_case.fc);
     UHDM::tf_call* returned = dut.compileTfCall(&fc,
-                                                0,
+                                                1,
                                                 &cd);
     test_case.expected = funcCall;
     ASSERT_EQ(returned, test_case.expected);
