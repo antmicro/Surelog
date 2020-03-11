@@ -245,21 +245,21 @@ set(ALL_LIBRARIES_FOR_SURELOG
     pthread
     ${TCMALLOC_LIBRARY})
 
+# Linkage instructions
+target_link_libraries(surelog-bin ${ALL_LIBRARIES_FOR_SURELOG})
+
 # Unit tests
 add_executable(CompileHelper-Test
-  ${PROJECT_SOURCE_DIR}/src/DesignCompile/CompileHelper_test.cpp
-  ${PROJECT_SOURCE_DIR}/src/DesignCompile/CompileHelper.cpp
-  ${PROJECT_SOURCE_DIR}/src/Expression/ExprBuilder.cpp
+# ${PROJECT_SOURCE_DIR}/src/DesignCompile/CompileHelper_test.cpp
+  ${surelog_SRC}
   )
 add_library(CompileHelper_test STATIC ${surelog_SRC})
 add_test(test_CompileHelper CompileHelper-Test COMMAND CompileHelper-Test)
-target_link_libraries(CompileHelper-Test 
+target_link_libraries(CompileHelper-Test
   ${ALL_LIBRARIES_FOR_SURELOG}
   gtest
+  gmock
   gtest_main)
-
-# Linkage instructions
-target_link_libraries(surelog-bin ${ALL_LIBRARIES_FOR_SURELOG})
 
 add_dependencies(hellosureworld surelog)
 add_dependencies(hellosureworld flatc)
