@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.0)
 add_subdirectory(third_party/flatbuffers EXCLUDE_FROM_ALL)
 add_subdirectory(third_party/antlr4/runtime/Cpp EXCLUDE_FROM_ALL)
 add_subdirectory(third_party/UHDM)
+add_subdirectory(third_party/googletest)
 
 find_package(SWIG REQUIRED)
 
@@ -48,6 +49,8 @@ include_directories(
   "${PROJECT_SOURCE_DIR}/third_party/UHDM/third_party/capnproto/c++/src/")
 include_directories(
   "${PROJECT_SOURCE_DIR}/third_party/UHDM/third_party/UHDM/src/")
+include_directories("${PROJECT_SOURCE_DIR}/third_party/googletest/googletest/include/")
+include_directories("${PROJECT_SOURCE_DIR}/third_party/googletest/googlemock/include/")
 
 # Directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY
@@ -241,6 +244,19 @@ set(ALL_LIBRARIES_FOR_SURELOG
     rt
     pthread
     ${TCMALLOC_LIBRARY})
+
+# Unit tests
+add_executable(CompileHelper-Test
+  ${PROJECT_SOURCE_DIR}/src/DesignCompile/CompileHelper_test.cpp
+  ${PROJECT_SOURCE_DIR}/src/DesignCompile/CompileHelper.cpp
+  ${PROJECT_SOURCE_DIR}/src/Expression/ExprBuilder.cpp
+  )
+add_library(CompileHelper_test STATIC ${surelog_SRC})
+add_test(test_CompileHelper CompileHelper-Test COMMAND CompileHelper-Test)
+target_link_libraries(CompileHelper-Test 
+  ${ALL_LIBRARIES_FOR_SURELOG}
+  gtest
+  gtest_main)
 
 # Linkage instructions
 target_link_libraries(surelog-bin ${ALL_LIBRARIES_FOR_SURELOG})
