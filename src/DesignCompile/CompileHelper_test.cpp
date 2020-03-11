@@ -38,6 +38,7 @@
 #include "DesignCompile/CompileHelper.h"
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
+#include "vpi_visitor.h"
 
 class MockCompileDesign : public SURELOG::CompileDesign {
   public:
@@ -52,12 +53,17 @@ class MockFileContent : public SURELOG::FileContent {
 
 using SURELOG::VObject;
 struct CompileHelperTestStruct {
-  std::vector<VObject> fc;
+  std::vector<VObject> objects;
   UHDM::tf_call* expected;
-  CompileHelperTestStruct(std::vector<SURELOG::VObject> file_content,
-                          UHDM::tf_call* output) : fc(file_content),
+  SURELOG::SymbolTable symbols;
+  CompileHelperTestStruct(std::vector<VObject> file_content,
+                          std::vector<std::string> strings,
+                          UHDM::tf_call* output) : objects(file_content),
                                                    expected(output)
-                         {}
+                         {
+                           for (auto s : strings)
+                             symbols.registerSymbol(s);
+                         }
 };
 
 CompileHelperTestStruct testCases[] = {
@@ -72,9 +78,10 @@ CompileHelperTestStruct testCases[] = {
       // Constructor call:
       // (nameId, fileId, type, line, parent, definition, child, sibling)
      { 0, 0, VObjectType::slSubroutine_call,   3, 20, 1,  17, 0},
-     { 1/*"foo"*/, 0, VObjectType::slStringConst,       3, 19, 17, 0,  18},
+     { 1, 0, VObjectType::slStringConst,       3, 19, 17, 0,  18},
      { 0, 0, VObjectType::slList_of_arguments, 3, 19, 18, 0,  0}
     },
+    {"foo"},
     0 //expected UHDM
   }
 };
@@ -87,15 +94,18 @@ TEST(TestCompileTfCall, FirstTest) {
   MockFileContent fc;
   UHDM::Serializer& s = cd.getSerializer();
 
-  UHDM::tf_call* funcCall = s.MakeFunc_call();//new UHDM::func_call();
+  UHDM::tf_call* funcCall = s.MakeFunc_call();
   funcCall->VpiName("foo");
   for (auto test_case : testCases) {
-    fc.set_objects(test_case.fc);
+    fc.set_objects(test_case.objects);
+    fc.setSymbolTable(&test_case.symbols);
     UHDM::tf_call* returned = dut.compileTfCall(&fc,
                                                 1,
                                                 &cd);
     test_case.expected = funcCall;
-    ASSERT_EQ(returned, test_case.expected);
+    std::string parsed = visit_designs({s.MakeUhdmHandle(uhdmtf_call, returned)});
+    std::string expected = visit_designs({s.MakeUhdmHandle(uhdmtf_call, test_case.expected)});
+    ASSERT_EQ(parsed, expected);
   }
 }
 
