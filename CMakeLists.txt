@@ -249,11 +249,13 @@ set(ALL_LIBRARIES_FOR_SURELOG
 target_link_libraries(surelog-bin ${ALL_LIBRARIES_FOR_SURELOG})
 
 # Unit tests
+enable_testing()
 add_executable(CompileHelper-Test
-# ${PROJECT_SOURCE_DIR}/src/DesignCompile/CompileHelper_test.cpp
+# ${flatbuffer-GENERATED_SRC}
   ${surelog_SRC}
   )
-add_library(CompileHelper_test STATIC ${surelog_SRC})
+#add_dependencies(CompileHelper-Test GenerateParser)
+#add_dependencies(CompileHelper-Test GenerateSerializer)
 add_test(test_CompileHelper CompileHelper-Test COMMAND CompileHelper-Test)
 target_link_libraries(CompileHelper-Test
   ${ALL_LIBRARIES_FOR_SURELOG}
