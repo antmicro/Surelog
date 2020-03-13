@@ -40,11 +40,6 @@
 #include "gmock/gmock.h"
 #include "vpi_visitor.h"
 
-class MockCompileDesign : public SURELOG::CompileDesign {
-  public:
-    MockCompileDesign() : CompileDesign(nullptr) {};
-};
-
 class MockFileContent : public SURELOG::FileContent {
   public:
     MockFileContent() : FileContent(0, nullptr, nullptr, nullptr, nullptr, 0){};
@@ -90,7 +85,7 @@ CompileHelperTestStruct testCases[] = {
     1, nullptr
   },
   {
-    // bar(clk);
+    // dsp("%d",clk);
     {
       // Vector of VObjects
       // n<> u<0> t<Subroutine_call> p<35> c<1> l<4>
@@ -125,11 +120,9 @@ CompileHelperTestStruct testCases[] = {
   }
 };
 
-using ::testing::NiceMock;
-
 TEST(TestCompileTfCall, FirstTest) {
   SURELOG::CompileHelper dut;
-  NiceMock<MockCompileDesign> cd;
+  SURELOG::CompileDesign cd(nullptr);
   MockFileContent fc;
   UHDM::Serializer& s = cd.getSerializer();
 
