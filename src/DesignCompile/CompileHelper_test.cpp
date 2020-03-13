@@ -54,15 +54,18 @@ class MockFileContent : public SURELOG::FileContent {
 using SURELOG::VObject;
 struct CompileHelperTestStruct {
   std::vector<VObject> objects;
-  UHDM::tf_call* expected;
+  //std::initializer_list<UHDM::func_call> expected;
+  UHDM::func_call* expected;
   SURELOG::SymbolTable symbols;
   CompileHelperTestStruct(std::vector<VObject> file_content,
                           std::vector<std::string> strings,
-                          UHDM::tf_call* output) : objects(file_content),
-                                                   expected(output)
+                          //std::initializer_list<UHDM::func_call> exp)
+                          int type, UHDM::function* ptr)
+                           : objects(file_content)
                          {
                            for (auto s : strings)
                              symbols.registerSymbol(s);
+                           expected = new UHDM::func_call{type, ptr};
                          }
 };
 
@@ -77,12 +80,48 @@ CompileHelperTestStruct testCases[] = {
       //
       // Constructor call:
       // (nameId, fileId, type, line, parent, definition, child, sibling)
-     { 0, 0, VObjectType::slSubroutine_call,   3, 20, 1,  17, 0},
-     { 1, 0, VObjectType::slStringConst,       3, 19, 17, 0,  18},
-     { 0, 0, VObjectType::slList_of_arguments, 3, 19, 18, 0,  0}
+     { 0, 0, VObjectType::slSubroutine_call,   3, 20, 1,  1, 0},
+     { 1, 0, VObjectType::slStringConst,       3, 0, 2, 0,  2},
+     { 0, 0, VObjectType::slList_of_arguments, 3, 0, 3, 0,  0}
     },
+    // Symbol table
     {"foo"},
-    0 //expected UHDM
+    // UHDM func_call initializers
+    1, nullptr
+  },
+  {
+    // bar(clk);
+    {
+      // Vector of VObjects
+      // n<> u<0> t<Subroutine_call> p<35> c<1> l<4>
+      //    n<dsp> u<1> t<StringConst> p<0> s<2> l<4>
+      //    n<> u<2> t<List_of_arguments> p<0> c<3> l<3>
+      //        n<> u<3> t<Expression> p<2> c<4> s<7> l<3>
+      //            n<> u<4> t<Primary> p<3> c<5> l<3>
+      //                n<> u<5> t<Primary_literal> p<4> c<6> l<3>
+      //                    n<"%d"> u<6> t<StringLiteral> p<5> l<4>
+      //        n<> u<7> t<Expression> p<2> c<8> l<4>
+      //            n<> u<8> t<Primary> p<7> c<9> l<4>
+      //                n<> u<9> t<Primary_literal> p<8> c<10> l<4>
+      //                    n<clk> u<10> t<StringConst> p<9> l<4>
+      // Constructor call:
+      // (nameId, fileId, type, line, parent, definition, child, sibling)
+     { 0, 0, VObjectType::slSubroutine_call,         4, 35,  0,  1, 0},
+       { 1, 0, VObjectType::slStringConst,           4,  0,  1,  0, 2},
+       { 0, 0, VObjectType::slList_of_arguments,     4,  0,  2,  3, 0},
+         { 0, 0, VObjectType::slExpression,          4,  2,  3,  4, 7},
+           { 0, 0, VObjectType::slPrimary,           4,  3,  4,  5, 0},
+             { 0, 0, VObjectType::slPrimary_literal, 4,  4,  5,  6, 0},
+               { 2, 0, VObjectType::slStringLiteral, 4,  5,  6,  0, 0},
+         { 0, 0, VObjectType::slExpression,          4,  2,  7,  8, 0},
+           { 0, 0, VObjectType::slPrimary,           4,  7,  8,  9, 0},
+             { 0, 0, VObjectType::slPrimary_literal, 4,  8,  9, 10, 0},
+               { 3, 0, VObjectType::slStringConst,   4,  9, 10,  0, 0},
+    },
+    // Symbol table
+    {"dsp", "%d", "clk"},
+    // UHDM func_call initializers
+    1, nullptr
   }
 };
 
@@ -94,18 +133,21 @@ TEST(TestCompileTfCall, FirstTest) {
   MockFileContent fc;
   UHDM::Serializer& s = cd.getSerializer();
 
-  UHDM::tf_call* funcCall = s.MakeFunc_call();
-  funcCall->VpiName("foo");
   for (auto test_case : testCases) {
     fc.set_objects(test_case.objects);
     fc.setSymbolTable(&test_case.symbols);
     UHDM::tf_call* returned = dut.compileTfCall(&fc,
-                                                1,
+                                                0,
                                                 &cd);
-    test_case.expected = funcCall;
+
+    UHDM::func_call* funcCall = test_case.expected;
+    funcCall->SetSerializer(&s);  // Needed for vpiName
+    funcCall->VpiName(test_case.symbols.getSymbol(1));  // Symbol table starts at 1
+
     std::string parsed = visit_designs({s.MakeUhdmHandle(uhdmtf_call, returned)});
-    std::string expected = visit_designs({s.MakeUhdmHandle(uhdmtf_call, test_case.expected)});
+    std::string expected = visit_designs({s.MakeUhdmHandle(uhdmtf_call, funcCall)});
     ASSERT_EQ(parsed, expected);
+    delete funcCall;
   }
 }
 
