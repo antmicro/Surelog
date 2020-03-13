@@ -6,6 +6,7 @@ add_subdirectory(third_party/antlr4/runtime/Cpp EXCLUDE_FROM_ALL)
 add_subdirectory(third_party/UHDM)
 add_subdirectory(third_party/googletest)
 
+set(FLATBUFFERS_BUILD_TESTS OFF)
 find_package(SWIG REQUIRED)
 
 # Detect build type, fallback to release and throw a warning if use didn't
@@ -207,6 +208,8 @@ file(
   ${PROJECT_SOURCE_DIR}/src/Expression/*.cpp
   ${PROJECT_SOURCE_DIR}/src/Package/*.cpp)
 
+list(FILTER surelog_SRC EXCLUDE REGEX ".*_test.cpp$")
+
 set(SURELOG_PUBLIC_HEADERS ${PROJECT_SOURCE_DIR}/src/surelog.h)
 
 add_library(surelog STATIC ${surelog_SRC})
@@ -251,12 +254,10 @@ target_link_libraries(surelog-bin ${ALL_LIBRARIES_FOR_SURELOG})
 # Unit tests
 enable_testing()
 add_executable(CompileHelper-Test
-# ${flatbuffer-GENERATED_SRC}
   ${surelog_SRC}
+  ${PROJECT_SOURCE_DIR}/src/DesignCompile/CompileHelper_test.cpp
   )
-#add_dependencies(CompileHelper-Test GenerateParser)
-#add_dependencies(CompileHelper-Test GenerateSerializer)
-add_test(test_CompileHelper CompileHelper-Test COMMAND CompileHelper-Test)
+add_test(NAME test_CompileHelper COMMAND CompileHelper-Test WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/dist/${CMAKE_BUILD_TYPE} )
 target_link_libraries(CompileHelper-Test
   ${ALL_LIBRARIES_FOR_SURELOG}
   gtest
