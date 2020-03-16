@@ -47,6 +47,10 @@ class MockFileContent : public SURELOG::FileContent {
 };
 
 using SURELOG::VObject;
+
+// Need this to get serializer for VpiName, VpiValue etc.
+SURELOG::CompileDesign cd(nullptr);
+
 struct CompileHelperTestStruct {
   std::vector<VObject> objects;
   //std::initializer_list<UHDM::func_call> expected;
@@ -59,15 +63,21 @@ struct CompileHelperTestStruct {
                           )
                            : objects(file_content)
                          {
+                           UHDM::Serializer& s = cd.getSerializer();
                            for (auto s : strings)
                              symbols.registerSymbol(s);
                            expected = new UHDM::func_call{type, ptr};
+                           expected->SetSerializer(&s);  // Needed for vpiName
+                           // Symbol table starts at 1
+                           expected->VpiName(symbols.getSymbol(1));
 
-                           VectorOfany arguments;
-                           for (auto a : args)
-                             arguments.push_back(a);
+                           VectorOfany* arguments = new VectorOfany;
+                           for (auto a : args) {
+                             arguments->push_back(a);
+                           }
 
-                           expected->Tf_call_args(&arguments);
+
+                           expected->Tf_call_args(arguments);
                          }
 };
 
@@ -127,13 +137,15 @@ CompileHelperTestStruct testCases[] = {
     // UHDM func_call initializers
     1, new UHDM::function(),
     // Argument vector initializer list
-    {new UHDM::constant(nullptr, 0, 0, 0 ,0, false)},
+    {new UHDM::constant(nullptr, 0, 0, 0 ,0, false, cd.getSerializer(), "INT:7")},
+    // Argument values
+    //8,
   }
 };
 
+
 TEST(TestCompileTfCall, FirstTest) {
   SURELOG::CompileHelper dut;
-  SURELOG::CompileDesign cd(nullptr);
   MockFileContent fc;
   UHDM::Serializer& s = cd.getSerializer();
 
@@ -145,11 +157,11 @@ TEST(TestCompileTfCall, FirstTest) {
                                                 &cd);
 
     UHDM::func_call* funcCall = test_case.expected;
-    funcCall->SetSerializer(&s);  // Needed for vpiName
-    funcCall->VpiName(test_case.symbols.getSymbol(1));  // Symbol table starts at 1
 
-    std::string parsed = visit_designs({s.MakeUhdmHandle(uhdmtf_call, returned)});
-    std::string expected = visit_designs({s.MakeUhdmHandle(uhdmtf_call, funcCall)});
+    vpiHandle hExpected = s.MakeUhdmHandle(uhdmtf_call, returned);
+    vpiHandle hParsed = s.MakeUhdmHandle(uhdmtf_call, funcCall);
+    std::string parsed = visit_designs({hExpected});
+    std::string expected = visit_designs({hParsed});
     ASSERT_EQ(parsed, expected);
     delete funcCall;
   }
