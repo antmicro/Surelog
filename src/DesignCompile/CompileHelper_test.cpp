@@ -54,13 +54,20 @@ struct CompileHelperTestStruct {
   SURELOG::SymbolTable symbols;
   CompileHelperTestStruct(std::vector<VObject> file_content,
                           std::vector<std::string> strings,
-                          //std::initializer_list<UHDM::func_call> exp)
-                          int type, UHDM::function* ptr)
+                          int type, UHDM::function* ptr,
+                          std::vector<UHDM::any*> args
+                          )
                            : objects(file_content)
                          {
                            for (auto s : strings)
                              symbols.registerSymbol(s);
                            expected = new UHDM::func_call{type, ptr};
+
+                           VectorOfany arguments;
+                           for (auto a : args)
+                             arguments.push_back(a);
+
+                           expected->Tf_call_args(&arguments);
                          }
 };
 
@@ -82,7 +89,9 @@ CompileHelperTestStruct testCases[] = {
     // Symbol table
     {"foo"},
     // UHDM func_call initializers
-    1, nullptr
+    1, nullptr,
+    // Argument vector initializer list
+    {},
   },
   {
     // dsp("%d",clk);
@@ -116,7 +125,9 @@ CompileHelperTestStruct testCases[] = {
     // Symbol table
     {"dsp", "%d", "clk"},
     // UHDM func_call initializers
-    1, nullptr
+    1, new UHDM::function(),
+    // Argument vector initializer list
+    {new UHDM::constant(nullptr, 0, 0, 0 ,0, false)},
   }
 };
 
