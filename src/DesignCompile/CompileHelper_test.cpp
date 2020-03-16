@@ -143,6 +143,42 @@ CompileHelperTestStruct testCases[] = {
   }
 };
 
+UHDM::design* addCallToDesign(UHDM::tf_call* call) {
+  UHDM::Serializer& s = cd.getSerializer();
+  design* d = s.MakeDesign();
+  d->VpiName("designTF");
+  module* m1 = s.MakeModule();
+  m1->VpiTopModule(true);
+  m1->VpiDefName("M1");
+  m1->VpiParent(d);
+  m1->VpiFile("fake1.sv");
+  m1->VpiLineNo(10);
+
+  initial* init = s.MakeInitial();
+  VectorOfprocess* processes = s.MakeProcessVec();
+  processes->push_back(init);
+  begin* begin_block = s.MakeBegin();
+  init->Stmt(begin_block);
+  VectorOfany* statements = s.MakeAnyVec();
+
+  // Add call to minimal design
+  statements->push_back(call);
+
+  begin_block->Stmts(statements);
+  m1->Process(processes);
+
+  VectorOfmodule* v1 = s.MakeModuleVec();
+  v1->push_back(m1);
+  d->AllModules(v1);
+
+  package* p1 = s.MakePackage();
+  p1->VpiDefName("P0");
+  VectorOfpackage* v3 = s.MakePackageVec();
+  v3->push_back(p1);
+  d->AllPackages(v3);
+
+  return d;
+}
 
 TEST(TestCompileTfCall, FirstTest) {
   SURELOG::CompileHelper dut;
@@ -158,8 +194,12 @@ TEST(TestCompileTfCall, FirstTest) {
 
     UHDM::func_call* funcCall = test_case.expected;
 
-    vpiHandle hExpected = s.MakeUhdmHandle(uhdmtf_call, returned);
-    vpiHandle hParsed = s.MakeUhdmHandle(uhdmtf_call, funcCall);
+    UHDM::design* expectedDesign = addCallToDesign(test_case.expected);
+    UHDM::design* returnedDesign = addCallToDesign(returned);
+
+    vpiHandle hExpected = s.MakeUhdmHandle(UHDM::uhdmdesign, expectedDesign);
+    vpiHandle hParsed = s.MakeUhdmHandle(UHDM::uhdmdesign, returnedDesign);
+
     std::string parsed = visit_designs({hExpected});
     std::string expected = visit_designs({hParsed});
     ASSERT_EQ(parsed, expected);
