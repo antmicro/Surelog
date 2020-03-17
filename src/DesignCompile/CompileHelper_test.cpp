@@ -208,8 +208,8 @@ TEST(TestCompileTfCall, FirstTest) {
     vpiHandle hExpected = s.MakeUhdmHandle(UHDM::uhdmdesign, expectedDesign);
     vpiHandle hParsed = s.MakeUhdmHandle(UHDM::uhdmdesign, returnedDesign);
 
-    std::string parsed = visit_designs({hExpected});
-    std::string expected = visit_designs({hParsed});
+    std::string expected = visit_designs({hExpected});
+    std::string parsed = visit_designs({hParsed});
     ASSERT_EQ(parsed, expected);
     delete funcCall;
   }
