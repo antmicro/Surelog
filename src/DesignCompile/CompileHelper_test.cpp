@@ -66,7 +66,8 @@ struct CompileHelperTestStruct {
   CompileHelperTestStruct(std::vector<VObject> file_content,
                           std::vector<std::string> strings,
                           int type, UHDM::function* ptr,
-                          std::vector<UHDM::any*> args
+                          std::vector<UHDM::any*> args,
+                          std::vector<std::function<void(UHDM::BaseClass*)>> initializers
                           )
                            : objects(file_content)
                          {
@@ -81,8 +82,11 @@ struct CompileHelperTestStruct {
                            expected->VpiName(symbols.getSymbol(1));
 
                            VectorOfany* arguments = new VectorOfany;
-                           for (auto a : args) {
-                             arguments->push_back(a);
+                           for (size_t i = 0; i < args.size(); i++) {
+                             // Run initializer function
+                             if (initializers[i] != nullptr)
+                               initializers[i](args[i]);
+                             arguments->push_back(args[i]);
                            }
 
                            expected->Tf_call_args(arguments);
@@ -109,6 +113,8 @@ CompileHelperTestStruct testCases[] = {
     // UHDM func_call initializers
     1, nullptr,
     // Argument vector initializer list
+    {},
+    // Argument values
     {},
   },
   {
@@ -145,9 +151,18 @@ CompileHelperTestStruct testCases[] = {
     // UHDM func_call initializers
     1, sharedSerializer.MakeFunction(),
     // Argument vector initializer list
-    {new UHDM::constant(nullptr, 0, 0, 0 ,0, false, cd.getSerializer(), "INT:7")},
+    {sharedSerializer.MakeConstant(), sharedSerializer.MakeConstant()},
     // Argument values
-    //8,
+    {
+      [](UHDM::BaseClass* b) {
+        UHDM::constant* c = reinterpret_cast<UHDM::constant*>(b);
+        c->VpiConstType(vpiStringConst);
+      },
+      [](UHDM::BaseClass* b) {
+        UHDM::constant* c = reinterpret_cast<UHDM::constant*>(b);
+        c->VpiConstType(vpiStringConst);
+      },
+    }
   }
 };
 
