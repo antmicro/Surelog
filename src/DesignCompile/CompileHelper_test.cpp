@@ -60,33 +60,26 @@ using SURELOG::VObject;
 
 struct CompileHelperTestStruct {
   std::vector<VObject> objects;
-  //std::initializer_list<UHDM::func_call> expected;
-  UHDM::func_call* expected;
+  UHDM::tf_call* expected;
   SURELOG::SymbolTable symbols;
   CompileHelperTestStruct(std::vector<VObject> file_content,
                           std::vector<std::string> strings,
-                          int type, UHDM::function* ptr,
-                          std::vector<UHDM::any*> args,
-                          std::vector<std::function<void(UHDM::BaseClass*)>> initializers
+                          std::function<UHDM::tf_call*()> exp_init,
+                          std::vector<std::function<UHDM::BaseClass*(void)>> initializers
                           )
                            : objects(file_content)
                          {
-                           UHDM::Serializer& s = cd.getSerializer();
                            for (auto s : strings)
                              symbols.registerSymbol(s);
 
-                           expected = s.MakeFunc_call();
-                           expected->VpiFuncType(type);
-                           expected->Function(ptr);
                            // Symbol table starts at 1
+                           expected = exp_init();
                            expected->VpiName(symbols.getSymbol(1));
 
                            VectorOfany* arguments = new VectorOfany;
-                           for (size_t i = 0; i < args.size(); i++) {
+                           for (auto f : initializers) {
                              // Run initializer function
-                             if (initializers[i] != nullptr)
-                               initializers[i](args[i]);
-                             arguments->push_back(args[i]);
+                             arguments->push_back(f());
                            }
 
                            expected->Tf_call_args(arguments);
@@ -110,11 +103,12 @@ CompileHelperTestStruct testCases[] = {
     },
     // Symbol table
     {"foo"},
-    // UHDM func_call initializers
-    1, nullptr,
-    // Argument vector initializer list
-    {},
-    // Argument values
+    // UHDM func_call initializer
+    [] () -> UHDM::tf_call* {
+      UHDM::func_call* c = sharedSerializer.MakeFunc_call();
+      return c;
+    },
+    // Argument vector initializers
     {},
   },
   {
@@ -149,18 +143,21 @@ CompileHelperTestStruct testCases[] = {
     // Symbol table
     {"dsp", "%d", "clk"},
     // UHDM func_call initializers
-    1, sharedSerializer.MakeFunction(),
-    // Argument vector initializer list
-    {sharedSerializer.MakeConstant(), sharedSerializer.MakeConstant()},
-    // Argument values
+    [] () -> UHDM::tf_call* {
+      UHDM::func_call* c = sharedSerializer.MakeFunc_call();
+      return c;
+    },
+    // Argument vector initializers
     {
-      [](UHDM::BaseClass* b) {
-        UHDM::constant* c = reinterpret_cast<UHDM::constant*>(b);
+      [] () -> UHDM::BaseClass* {
+        UHDM::constant* c = sharedSerializer.MakeConstant();
         c->VpiConstType(vpiStringConst);
+        return c;
       },
-      [](UHDM::BaseClass* b) {
-        UHDM::constant* c = reinterpret_cast<UHDM::constant*>(b);
+      [] () -> UHDM::BaseClass* {
+        UHDM::constant* c = sharedSerializer.MakeConstant();
         c->VpiConstType(vpiStringConst);
+        return c;
       },
     }
   }
@@ -215,8 +212,6 @@ TEST(TestCompileTfCall, FirstTest) {
                                                 0,
                                                 &cd);
 
-    UHDM::func_call* funcCall = test_case.expected;
-
     UHDM::design* expectedDesign = addCallToDesign(test_case.expected);
     UHDM::design* returnedDesign = addCallToDesign(returned);
 
@@ -226,7 +221,6 @@ TEST(TestCompileTfCall, FirstTest) {
     std::string expected = visit_designs({hExpected});
     std::string parsed = visit_designs({hParsed});
     ASSERT_EQ(parsed, expected);
-    delete funcCall;
   }
 }
 
