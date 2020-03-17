@@ -46,10 +46,17 @@ class MockFileContent : public SURELOG::FileContent {
     void set_objects(std::vector<SURELOG::VObject> objs){m_objects = objs;}
 };
 
+UHDM::Serializer sharedSerializer;
+class MockCompileDesign : public SURELOG::CompileDesign {
+  public:
+    MockCompileDesign() : CompileDesign(nullptr) {}
+    UHDM::Serializer& getSerializer() {return sharedSerializer;}
+};
+// Need this to get serializer for VpiName, VpiValue etc.
+MockCompileDesign cd;
+
 using SURELOG::VObject;
 
-// Need this to get serializer for VpiName, VpiValue etc.
-SURELOG::CompileDesign cd(nullptr);
 
 struct CompileHelperTestStruct {
   std::vector<VObject> objects;
@@ -66,8 +73,10 @@ struct CompileHelperTestStruct {
                            UHDM::Serializer& s = cd.getSerializer();
                            for (auto s : strings)
                              symbols.registerSymbol(s);
-                           expected = new UHDM::func_call{type, ptr};
-                           expected->SetSerializer(&s);  // Needed for vpiName
+
+                           expected = s.MakeFunc_call();
+                           expected->VpiFuncType(type);
+                           expected->Function(ptr);
                            // Symbol table starts at 1
                            expected->VpiName(symbols.getSymbol(1));
 
@@ -75,7 +84,6 @@ struct CompileHelperTestStruct {
                            for (auto a : args) {
                              arguments->push_back(a);
                            }
-
 
                            expected->Tf_call_args(arguments);
                          }
@@ -135,7 +143,7 @@ CompileHelperTestStruct testCases[] = {
     // Symbol table
     {"dsp", "%d", "clk"},
     // UHDM func_call initializers
-    1, new UHDM::function(),
+    1, sharedSerializer.MakeFunction(),
     // Argument vector initializer list
     {new UHDM::constant(nullptr, 0, 0, 0 ,0, false, cd.getSerializer(), "INT:7")},
     // Argument values
