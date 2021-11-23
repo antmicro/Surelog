@@ -84,7 +84,7 @@ bool CompileHelper::substituteAssignedValue(const UHDM::any* oper,
       }
     }
   }
-  return substitute;
+  return false;
 }
 
 expr* CompileHelper::reduceBitSelect(
