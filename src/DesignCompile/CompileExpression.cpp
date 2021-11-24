@@ -2843,13 +2843,13 @@ any* CompileHelper::getValue(const std::string& name,
     } else if (resultType == uhdmoperation || resultType == uhdmhier_path ||
                resultType == uhdmbit_select ||
                resultType == uhdmsys_func_call) {
-      if (reduce) {
-        bool invalidValue = false;
-        any* tmp =
-            reduceExpr(result, invalidValue, component, compileDesign, instance,
-                       fileName, lineNumber, pexpr, muteErrors);
-        if (tmp) result = tmp;
-      }
+      // if (reduce) {
+      //   bool invalidValue = false;
+      //   any* tmp =
+      //       reduceExpr(result, invalidValue, component, compileDesign, instance,
+      //                  fileName, lineNumber, pexpr, muteErrors);
+      //   if (tmp) result = tmp;
+      // }
     } else {
       int setBreakpointHere = 1;
       setBreakpointHere++;
