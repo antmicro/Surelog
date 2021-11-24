@@ -1281,9 +1281,15 @@ UHDM::typespec* CompileHelper::compileTypespec(
       expr* exp =
           (expr*)compileExpression(component, fC, type, compileDesign, nullptr,
                                    instance, true, reduce == false);
-      if (exp && exp->UhdmType() == uhdmref_obj) {
-        return compileTypespec(component, fC, fC->Child(type), compileDesign,
-                               result, instance, reduce);
+      if (exp) {
+                expression_typespec* tps = s.MakeExpression_typespec();
+        tps->VpiStmt(exp);
+        tps->VpiFile(fC->getFileName());
+        tps->VpiLineNo(fC->Line(type));
+        tps->VpiColumnNo(fC->Column(type));
+        tps->VpiEndLineNo(fC->EndLine(type));
+        tps->VpiEndColumnNo(fC->EndColumn(type));
+        return tps;
       } else {
         integer_typespec* var = s.MakeInteger_typespec();
         if (exp) {
