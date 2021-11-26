@@ -3053,6 +3053,7 @@ UHDM::any* CompileHelper::compileExpression(
     DesignComponent* component, const FileContent* fC, NodeId parent,
     CompileDesign* compileDesign, UHDM::any* pexpr, ValuedComponentI* instance,
     bool reduce, bool muteErrors) {
+  reduce = false;
   UHDM::Serializer& s = compileDesign->getSerializer();
   UHDM::any* result = nullptr;
   VObjectType parentType = fC->Type(parent);
