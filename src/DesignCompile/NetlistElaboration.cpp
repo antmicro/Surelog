@@ -399,7 +399,7 @@ bool NetlistElaboration::elab_parameters_(ModuleInstance* instance,
       if (assign->getAssignId()) {
         expr* rhs = (expr*)m_helper.compileExpression(
             mod, assign->getFileContent(), assign->getAssignId(),
-            m_compileDesign, nullptr, instance, !isMultidimensional);
+            m_compileDesign, nullptr, instance, false);
         inst_assign->Rhs(rhs);
       }
     }
