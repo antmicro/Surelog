@@ -233,6 +233,13 @@ any* CompileHelper::getObject(const std::string& name,
         if (pname == name) {
           if (substituteAssignedValue(p->Rhs(), compileDesign)) {
             result = (any*)p->Rhs();
+
+            expr* result_expr = any_cast<expr*>(result);
+            if (result_expr) {
+              result_expr->Original_expr((expr*)p->Rhs());
+              result = result_expr;
+            }
+
             break;
           }
         }
@@ -1882,7 +1889,13 @@ expr* CompileHelper::reduceExpr(any* result, bool& invalidValue,
         }
       }
     }
-    return (expr*)result;
+    expr* result_expr = (expr*) result;
+    if (result_expr) {
+      result_expr->Original_expr((expr*)op);
+      return result_expr;
+    }
+    else
+      return nullptr;
   } else if (objtype == uhdmconstant) {
     return (expr*)result;
   } else if (objtype == uhdmsys_func_call) {
@@ -2761,6 +2774,15 @@ any* CompileHelper::getValue(const std::string& name,
                       reorderAssignmentPattern(component, lhs, rhs,
                                                compileDesign, instance, 0);
                     }
+                    ElaboratorListener listener(&s);
+                    result = UHDM::clone_tree((any*)param->Rhs(), s, &listener);
+                    expr* result_expr = any_cast<expr*>(result);
+                    if (result_expr) {
+                      result_expr->Original_expr((expr*)op);
+                      result = result_expr;
+                    }
+                    break;
+
                   }
 
                   ElaboratorListener listener(&s);
@@ -4058,6 +4080,12 @@ UHDM::any* CompileHelper::compileExpression(
                         ElaboratorListener listener(&s);
                         result =
                             UHDM::clone_tree((any*)param->Rhs(), s, &listener);
+                        expr* result_expr = any_cast<expr*>(result);
+                        if (result_expr) {
+                          result_expr->Original_expr((expr*)param->Rhs());
+                          result = result_expr;
+                        }
+
                       }
                       break;
                     }
