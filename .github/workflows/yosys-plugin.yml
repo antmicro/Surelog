@@ -2,8 +2,8 @@ name: 'yosys-systemverilog-plugin'
 
 on:
   push:
-    branches:
-      - master
+    # branches:
+    #   - master
   pull_request:
 
 jobs:
@@ -72,6 +72,11 @@ jobs:
         pip install cmake
         echo 'PATH=/usr/lib/ccache:'"$PATH" >> $GITHUB_ENV
         ./build_binaries.sh
+
+    - name: Run Yosys Systemverilog plugin tests
+      run: |
+        cd yosys-uhdm-plugin-integration/yosys-symbiflow-plugins
+        make -C systemverilog-plugin test
 
     - name: Build & Test Ibex
       run: |
