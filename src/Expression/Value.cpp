@@ -163,7 +163,7 @@ void ValueFactory::deleteValue(Value* value) {
   */
 }
 
-void SValue::set(uint64_t val) {
+void SValue::set(__uint128_t val) {
   m_type = Value::Type::Unsigned;
   m_value.u_int = val;
   m_size = 64;
@@ -173,7 +173,7 @@ void SValue::set(uint64_t val) {
   m_rrange = 0;
   m_signed = false;
 }
-void SValue::set(int64_t val) {
+void SValue::set(__int128_t val) {
   m_type = Value::Type::Integer;
   m_value.s_int = val;
   m_size = 64;
@@ -193,7 +193,7 @@ void SValue::set(double val) {
   m_rrange = 0;
   m_signed = true;
 }
-void SValue::set(uint64_t val, Type type, short size) {
+void SValue::set(__uint128_t val, Type type, short size) {
   m_type = type;
   m_value.u_int = val;
   m_size = size;
@@ -270,7 +270,7 @@ std::string SValue::uhdmValue() {
   switch (valueType) {
     case Value::Type::Scalar:
       result = "SCAL:";
-      result += std::to_string(m_value.u_int);
+      result += to_string(m_value.u_int);
       break;
     case Value::Type::Double:
       result = "REAL:";
@@ -278,15 +278,15 @@ std::string SValue::uhdmValue() {
       break;
     case Value::Type::Integer:
       result = "INT:";
-      result += std::to_string(m_value.s_int);
+      result += to_string(m_value.s_int);
       break;
     case Value::Type::Unsigned:
       result = "UINT:";
-      result += std::to_string(m_value.u_int);
+      result += to_string(m_value.u_int);
       break;
     default:
       result = "INT:";
-      result += std::to_string(m_value.u_int);
+      result += to_string(m_value.u_int);
       break;
   }
   return result;
@@ -297,7 +297,7 @@ std::string SValue::decompiledValue() {
   std::string result;
   switch (valueType) {
     case Value::Type::Scalar:
-      result = std::to_string(m_value.u_int);
+      result = to_string(m_value.u_int);
       break;
     case Value::Type::Double:
       result = std::to_string(m_value.d_int);
@@ -311,10 +311,10 @@ std::string SValue::decompiledValue() {
                NumUtils::binToHex(NumUtils::toBinary(m_size, m_value.d_int));
       break;
     case Value::Type::Integer:
-      result = std::to_string(m_value.s_int);
+      result = to_string(m_value.s_int);
       break;
     default:
-      result = std::to_string(m_value.u_int);
+      result = to_string(m_value.u_int);
       break;
   }
   return result;
@@ -880,7 +880,7 @@ std::string LValue::uhdmValue() {
     case Value::Type::Scalar:
       result = "SCAL:";
       for (int i = 0; i < m_nbWords; i++) {
-        result += std::to_string(m_valueArray[i].m_value.u_int);
+        result += to_string(m_valueArray[i].m_value.u_int);
       }
       break;
     case Value::Type::Double:
@@ -892,19 +892,19 @@ std::string LValue::uhdmValue() {
     case Value::Type::Integer:
       result = "INT:";
       for (int i = 0; i < m_nbWords; i++) {
-        result += std::to_string(m_valueArray[i].m_value.s_int);
+        result += to_string(m_valueArray[i].m_value.s_int);
       }
       break;
     case Value::Type::Unsigned:
       result = "UINT:";
       for (int i = 0; i < m_nbWords; i++) {
-        result += std::to_string(m_valueArray[i].m_value.u_int);
+        result += to_string(m_valueArray[i].m_value.u_int);
       }
       break;
     default:
       result = "INT:";
       for (int i = 0; i < m_nbWords; i++) {
-        result += std::to_string(m_valueArray[i].m_value.u_int);
+        result += to_string(m_valueArray[i].m_value.u_int);
       }
       break;
   }
@@ -916,7 +916,7 @@ std::string LValue::decompiledValue() {
   switch (m_type) {
     case Value::Type::Scalar:
       for (int i = 0; i < m_nbWords; i++) {
-        result += std::to_string(m_valueArray[i].m_value.u_int);
+        result += to_string(m_valueArray[i].m_value.u_int);
       }
       break;
     case Value::Type::Double:
@@ -926,12 +926,12 @@ std::string LValue::decompiledValue() {
       break;
     case Value::Type::Integer:
       for (int i = 0; i < m_nbWords; i++) {
-        result += std::to_string(m_valueArray[i].m_value.s_int);
+        result += to_string(m_valueArray[i].m_value.s_int);
       }
       break;
     default:
       for (int i = 0; i < m_nbWords; i++) {
-        result += std::to_string(m_valueArray[i].m_value.u_int);
+        result += to_string(m_valueArray[i].m_value.u_int);
       }
       break;
   }
@@ -1052,7 +1052,7 @@ LValue::LValue(int64_t val, Type type, short size)
   m_rrange = 0;
 }
 
-void LValue::set(uint64_t val) {
+void LValue::set(__uint128_t val) {
   m_type = Type::Unsigned;
   m_nbWords = 1;
   if (!m_valueArray) m_valueArray = new SValue[1];
@@ -1068,7 +1068,7 @@ void LValue::set(uint64_t val) {
   m_rrange = 0;
 }
 
-void LValue::set(int64_t val) {
+void LValue::set(__int128_t val) {
   m_type = Type::Integer;
   m_nbWords = 1;
   if (!m_valueArray) m_valueArray = new SValue[1];
@@ -1111,7 +1111,7 @@ void LValue::set(double val) {
   m_rrange = 0;
 }
 
-void LValue::set(uint64_t val, Type type, short size) {
+void LValue::set(__uint128_t val, Type type, short size) {
   m_type = type;
   m_nbWords = 1;
   if (!m_valueArray) m_valueArray = new SValue[1];

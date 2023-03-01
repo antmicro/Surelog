@@ -130,6 +130,11 @@ template <typename result_type>
                                              uint64_t* result) {
   return internal::strToNum(s, 10, result);
 }
+// Parse __uint128, stricly matching its range; no negative numbers
+[[nodiscard]] inline const char* parseUint128(std::string_view s,
+                                             __uint128_t* result) {
+  return internal::strToNum(s, 10, result);
+}
 
 template <typename result_type>
 [[nodiscard]] inline const char* parseBinary(std::string_view s,

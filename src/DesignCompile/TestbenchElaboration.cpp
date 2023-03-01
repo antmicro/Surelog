@@ -391,7 +391,7 @@ bool TestbenchElaboration::bindFunctionReturnTypesAndParamaters_() {
               else if (value->getType() == Value::Type::Double)
                 exp = std::to_string(value->getValueD(0));
               else
-                exp = std::to_string(value->getValueL(0));
+                exp = to_string(value->getValueL(0));
               Location loc2(symbols->registerSymbol(exp));
               Error err1(ErrorDefinition::COMP_INCOMPATIBLE_TYPES, loc1, loc2);
               errors->addError(err1);

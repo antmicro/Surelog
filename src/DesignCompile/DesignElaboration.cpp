@@ -1017,7 +1017,7 @@ void DesignElaboration::elaborateInstance_(
               parent, true, false);
           m_helper.checkForLoops(false);
           Value* initValue = m_exprBuilder.getValueFactory().newLValue();
-          initValue->set(initVal);
+          initValue->set(static_cast<__uint128_t>(initVal));
 
           const std::string_view name = fC->SymName(varId);
           parent->setValue(name, initValue, m_exprBuilder, fC->Line(varId));

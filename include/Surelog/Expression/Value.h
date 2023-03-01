@@ -30,6 +30,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <algorithm>
 
 namespace SURELOG {
 
@@ -80,15 +81,15 @@ class Value : public RTTI {
   // is large value (more than one 64 bit word)
   virtual bool isLValue() const = 0;
 
-  virtual uint64_t getValueUL(unsigned short index = 0) const = 0;
-  virtual int64_t getValueL(unsigned short index = 0) const = 0;
+  virtual __uint128_t getValueUL(unsigned short index = 0) const = 0;
+  virtual __int128_t getValueL(unsigned short index = 0) const = 0;
   virtual double getValueD(unsigned short index = 0) const = 0;
   virtual std::string getValueS() const = 0;
 
-  virtual void set(uint64_t val) = 0;
-  virtual void set(int64_t val) = 0;
+  virtual void set(__uint128_t val) = 0;
+  virtual void set(__int128_t val) = 0;
   virtual void set(double val) = 0;
-  virtual void set(uint64_t val, Type type, short size) = 0;
+  virtual void set(__uint128_t val, Type type, short size) = 0;
   virtual void set(std::string_view val) = 0;
   virtual void set(std::string_view val, Type type) = 0;
   virtual bool operator<(const Value& rhs) const = 0;
@@ -152,8 +153,8 @@ class SValue final : public Value {
 
  private:
   union Data {
-    int64_t s_int;
-    uint64_t u_int;
+    __int128_t s_int;
+    __uint128_t u_int;
     double d_int;
   };
   Data m_value;
@@ -211,10 +212,10 @@ class SValue final : public Value {
   void setInvalid() final { m_valid = 0; }
   bool isNegative() const final { return m_negative; }
   void setNegative() final { m_negative = 1; }
-  void set(uint64_t val) final;
-  void set(int64_t val) final;
+  void set(__uint128_t val) final;
+  void set(__int128_t val) final;
   void set(double val) final;
-  void set(uint64_t val, Type type, short size) final;
+  void set(__uint128_t val, Type type, short size) final;
 
   void set(std::string_view val) final {
     m_type = Value::Type::None;
@@ -252,10 +253,10 @@ class SValue final : public Value {
     }
   }
 
-  uint64_t getValueUL(unsigned short index = 0) const final {
+  __uint128_t getValueUL(unsigned short index = 0) const final {
     return m_value.u_int;
   }
-  int64_t getValueL(unsigned short index = 0) const final {
+  __int128_t getValueL(unsigned short index = 0) const final {
     return m_value.s_int;
   }
   double getValueD(unsigned short index = 0) const final {
@@ -367,19 +368,19 @@ class LValue final : public Value {
   void setInvalid() final { m_valid = 0; }
   bool isNegative() const final { return m_negative; }
   void setNegative() final { m_negative = 1; }
-  void set(uint64_t val) final;
-  void set(int64_t val) final;
+  void set(__uint128_t val) final;
+  void set(__int128_t val) final;
   void set(double val) final;
-  void set(uint64_t val, Type type, short size) final;
+  void set(__uint128_t val, Type type, short size) final;
   void set(std::string_view val) final {}
   void set(std::string_view val, Type type) final {}
   bool operator<(const Value& rhs) const final;
   bool operator==(const Value& rhs) const final;
 
-  uint64_t getValueUL(unsigned short index = 0) const final {
+  __uint128_t getValueUL(unsigned short index = 0) const final {
     return ((index < m_nbWords) ? m_valueArray[index].m_value.u_int : 0);
   }
-  int64_t getValueL(unsigned short index = 0) const final {
+  __int128_t getValueL(unsigned short index = 0) const final {
     return ((index < m_nbWords) ? m_valueArray[index].m_value.s_int : 0);
   }
   double getValueD(unsigned short index = 0) const final {
@@ -436,6 +437,21 @@ class LValue final : public Value {
   bool m_signed = false;
 };
 
+static const char* charmap = "0123456789";
+static std::string to_string(const __uint128_t& value)
+{
+    std::string result;
+    result.reserve( 40 ); // max. 40 digits possible ( uint64_t has 20) 
+    __uint128_t helper = value;
+
+    do {
+        result += charmap[ helper % 10 ];
+        helper /= 10;
+    } while ( helper );
+    std::reverse( result.begin(), result.end() );
+    return result;
+}
+
 class StValue final : public Value {
   SURELOG_IMPLEMENT_RTTI(StValue, Value)
   friend LValue;
@@ -464,15 +480,15 @@ class StValue final : public Value {
   void setInvalid() final { m_valid = false; }
   void setNegative() final {}
   bool isNegative() const final { return false; }
-  void set(uint64_t val) final {
+  void set(__uint128_t val) final {
     m_type = Type::Unsigned;
-    m_value = std::to_string(val);
+    m_value = to_string(val);
     m_valid = true;
     m_signed = false;
   }
-  void set(int64_t val) final {
+  void set(__int128_t val) final {
     m_type = Type::Integer;
-    m_value = std::to_string(val);
+    m_value = to_string(val);
     m_valid = true;
     m_signed = true;
   }
@@ -482,9 +498,9 @@ class StValue final : public Value {
     m_valid = true;
     m_signed = true;
   }
-  void set(uint64_t val, Type type, short size) final {
+  void set(__uint128_t val, Type type, short size) final {
     m_type = type;
-    m_value = std::to_string(val);
+    m_value = to_string(val);
     m_size = size;
     m_valid = true;
     m_signed = false;
@@ -519,7 +535,7 @@ class StValue final : public Value {
   bool operator==(const Value& rhs) const final {
     return m_value == (value_cast<const StValue*>(&rhs))->m_value;
   }
-  uint64_t getValueUL(unsigned short index = 0) const final {
+  __uint128_t getValueUL(unsigned short index = 0) const final {
     switch (m_type) {
       case Value::Type::Integer:
         return (uint64_t)std::strtoull(m_value.c_str(), nullptr, 10);
@@ -535,7 +551,7 @@ class StValue final : public Value {
         return (uint64_t)std::strtoull(m_value.c_str(), nullptr, 10);
     }
   }
-  int64_t getValueL(unsigned short index = 0) const final {
+  __int128_t getValueL(unsigned short index = 0) const final {
     switch (m_type) {
       case Value::Type::Integer:
         return (int64_t)std::strtoll(m_value.c_str(), nullptr, 10);

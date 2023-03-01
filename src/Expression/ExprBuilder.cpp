@@ -31,6 +31,7 @@
 #include <Surelog/Utils/StringUtils.h>
 
 #include <cmath>
+#include <iostream>
 
 #if defined(_MSC_VER)
 #define strcasecmp _stricmp
@@ -484,13 +485,13 @@ Value* ExprBuilder::evalExpr(const FileContent* fC, NodeId parent,
             if (NumUtils::parseInt64(val, &i) == nullptr) {
               i = 0;
             }
-            value->set(i);
+            value->set(static_cast<__uint128_t>(i));
           } else {
             uint64_t u = 0;
             if (NumUtils::parseUint64(val, &u) == nullptr) {
               u = 0;
             }
-            value->set(u);
+            value->set(static_cast<__uint128_t>(u));
           }
         }
         break;
@@ -501,7 +502,7 @@ Value* ExprBuilder::evalExpr(const FileContent* fC, NodeId parent,
         break;
       }
       case VObjectType::slNull_keyword: {
-        value->set((uint64_t)0);
+        value->set((__uint128_t)0);
         break;
       }
       case VObjectType::slPackage_scope:
@@ -630,7 +631,7 @@ Value* ExprBuilder::evalExpr(const FileContent* fC, NodeId parent,
           int val = args[0]->getValueL();
           val = val - 1;
           if (val < 0) {
-            value->set((int64_t)0);
+            value->set((__int128_t)0);
             value->setInvalid();
             break;
           }
@@ -638,22 +639,22 @@ Value* ExprBuilder::evalExpr(const FileContent* fC, NodeId parent,
           for (; val > 0; clog2 = clog2 + 1) {
             val = val >> 1;
           }
-          value->set((int64_t)clog2);
+          value->set((__int128_t)clog2);
         } else if (funcName == "ln") {
           int val = args[0]->getValueL();
-          value->set((int64_t)std::log(val));
+          value->set((__int128_t)std::log(val));
         } else if (funcName == "clog") {
           int val = args[0]->getValueL();
-          value->set((int64_t)std::log10(val));
+          value->set((__int128_t)std::log10(val));
         } else if (funcName == "exp") {
           int val = args[0]->getValueL();
-          value->set((int64_t)std::exp2(val));
+          value->set((__int128_t)std::exp2(val));
         } else if (funcName == "bits") {
           // $bits is implemented in compileExpression.cpp
-          value->set((int64_t)0);
+          value->set((__int128_t)0);
           value->setInvalid();
         } else {
-          value->set((int64_t)0);
+          value->set((__int128_t)0);
           value->setInvalid();
         }
         break;
@@ -724,7 +725,7 @@ Value* ExprBuilder::evalExpr(const FileContent* fC, NodeId parent,
         }
         base = 'b';
         if (svalue.empty()) {
-          value->set((int64_t)0);
+          value->set((__int128_t)0);
         } else {
           m_valueFactory.deleteValue(value);
           value = m_valueFactory.newStValue();
@@ -737,7 +738,7 @@ Value* ExprBuilder::evalExpr(const FileContent* fC, NodeId parent,
         break;
       }
       default:
-        value->set((int64_t)0);
+        value->set((__int128_t)0);
         value->setInvalid();
         break;
     }
@@ -918,9 +919,9 @@ Value* ExprBuilder::fromVpiValue(std::string_view s, int size) {
   Value* val = nullptr;
   if (s.find("UINT:") == 0) {
     val = m_valueFactory.newLValue();
-    uint64_t v = 0;
+    __uint128_t v = 0;
     s.remove_prefix(std::string_view("UINT:").length());
-    if (NumUtils::parseUint64(s, &v) == nullptr) {
+    if (NumUtils::parseUint128(s, &v) == nullptr) {
       v = 0;
     }
     if (size)
@@ -937,7 +938,7 @@ Value* ExprBuilder::fromVpiValue(std::string_view s, int size) {
     if (size)
       val->set(v, Value::Type::Integer, size);
     else
-      val->set(v);
+      val->set((__int128_t)v);
   } else if (s.find("DEC:") == 0) {
     val = m_valueFactory.newLValue();
     int64_t v = 0;
@@ -948,7 +949,7 @@ Value* ExprBuilder::fromVpiValue(std::string_view s, int size) {
     if (size)
       val->set(v, Value::Type::Integer, size);
     else
-      val->set(v);
+      val->set((__int128_t)v);
   } else if (s.find("SCAL:") == 0) {
     s.remove_prefix(std::string_view("SCAL:").length());
     switch (s.front()) {
@@ -973,7 +974,7 @@ Value* ExprBuilder::fromVpiValue(std::string_view s, int size) {
           if (NumUtils::parseInt64(s, &v) == nullptr) {
             v = 0;
           }
-          val->set(v);
+          val->set((__int128_t)v);
         }
         break;
     }
@@ -1124,13 +1125,13 @@ Value* ExprBuilder::fromString(std::string_view value) {
         int64_t v = 0;
         if (NumUtils::parseInt64(value, &v) != nullptr) {
           val = m_valueFactory.newLValue();
-          val->set(v);
+          val->set((__int128_t)v);
         }
       } else {
         uint64_t v = 0;
         if (NumUtils::parseUint64(value, &v) != nullptr) {
           val = m_valueFactory.newLValue();
-          val->set(v);
+          val->set(static_cast<__uint128_t>(v));
         }
       }
       if (val == nullptr) {
