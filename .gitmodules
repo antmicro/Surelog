@@ -6,8 +6,7 @@
 
 [submodule "third_party/UHDM"]
 	path = third_party/UHDM
-	url = https://github.com/chipsalliance/UHDM.git
-	branch = v1.74
+	url = https://github.com/antmicro/UHDM.git
 [submodule "third_party/antlr4"]
 	path = third_party/antlr4
 	url = https://github.com/antlr/antlr4.git
