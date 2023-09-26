@@ -2,14 +2,12 @@ name: 'yosys-systemverilog-plugin'
 
 on:
   push:
-    branches:
-      - master
   pull_request:
 
 jobs:
 
   test-plugin:
-    runs-on: [self-hosted, Linux, X64, gcp-custom-runners]
+    runs-on: ubuntu-latest
     container: ubuntu:jammy
     defaults:
       run:
@@ -41,7 +39,7 @@ jobs:
         # Make sure we always use https:// instead of git://
         git config --global url.https://github.com/.insteadOf git://github.com/
         # Use current main of the plugin repository...
-        git clone https://github.com/chipsalliance/systemverilog-plugin.git
+        git clone https://github.com/chipsalliance/systemverilog-plugin.git -b new-build-setup
         cd systemverilog-plugin
         git submodule update --depth 1 --init --recursive \
               third_party/yosys \
